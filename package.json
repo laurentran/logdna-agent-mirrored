@@ -1,0 +1,31 @@
+{
+  "name": "logdna-agent-linux",
+  "version": "1.0.0",
+  "description": "LogDNA's Linux Collector Agent",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/answerbook/logdna-agent-linux.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/answerbook/logdna-agent-linux/issues"
+  },
+  "homepage": "https://github.com/answerbook/logdna-agent-linux",
+  "dependencies": {
+    "commander": "^2.8.1",
+    "lodash": "^3.10.1",
+    "properties": "^1.2.1",
+    "socket.io-client": "^1.3.6",
+    "tail": "^0.4.0"
+  },
+  "devDependencies": {
+    "grunt": "^0.4.5",
+    "grunt-exec": "^0.4.6",
+    "grunt-line-remover": "0.0.2"
+  }
+}
