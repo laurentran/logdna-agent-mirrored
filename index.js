@@ -37,8 +37,7 @@ properties.parse(program.config || "/etc/logdna.conf", {
     path: true
 }, function(error, config) {
     config = config || {};
-    if (error && !program.key) return console.error("LogDNA Agent Key not set! Use -k to set.");
-    if (!config.key) return console.error("LogDNA Agent Key not set! Use -k to set.");
+    if (!program.key && (error || !config.key)) return console.error("LogDNA Agent Key not set! Use -k to set.");
 
     // sanitize
     if (!config.logdir)
@@ -77,7 +76,7 @@ properties.parse(program.config || "/etc/logdna.conf", {
         return;
     }
 
-    socket = io('ws://localhost', {
+    socket = io('ws://logs.logdna.com', {
         transports: ['websocket']
     });
     socket.on('connect', function() {
