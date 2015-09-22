@@ -204,8 +204,8 @@ function onNewLine(file) {
     return function(line) {
         if (socket.connected)
             socket.emit("l", { l: line, f: file });
-        else
-            log("Not connected: " + file + ": " + line);
+        // else
+        //     log("Not connected: " + file + ": " + line);
     };
 }
 
