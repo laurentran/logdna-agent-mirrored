@@ -105,7 +105,7 @@ properties.parse(program.config || DEFAULT_CONF_FILE, {
 });
 
 function authenticate(config) {
-    log("Authenticating Agent Key with " + LOGDNA_APIHOST + "...");
+    log("Authenticating Agent Key with " + LOGDNA_APIHOST + (LOGDNA_APISSL ? " (SSL)" : "") + "...");
     request.post( (LOGDNA_APISSL ? "https://" : "http://") + LOGDNA_APIHOST + "/authenticate/" + config.key, { json: { hostname: os.hostname(), mac: config.mac, ip: config.ip, agentname: program._name, agentversion: pkg.version } }, function(err, res, body) {
         if (err || res.statusCode != "200") {
             // got error, try again in an hour
