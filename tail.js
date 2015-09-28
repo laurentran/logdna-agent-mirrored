@@ -112,10 +112,9 @@ Tail = (function(_super) {
       }
     } else if (e === 'rename') {
       this.unwatch();
-      // LLIU @ 8/19/2015: prevent crashes
-      // return setTimeout((function() {
-      //   return _this.watch();
-      // }), 1000);
+      return setTimeout((function() {
+        return _this.watch();
+      }), 1000);
     }
   };
 
