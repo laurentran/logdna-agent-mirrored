@@ -149,7 +149,7 @@ function authenticate(config) {
 function setupSockets(config) {
     socket = io( (LOGDNA_LOGSSL ? "wss://" : "ws://") + LOGDNA_LOGHOST + ":" + LOGDNA_LOGPORT, {
         transports: ['websocket'],
-        query: { auth_token: config.auth_token }
+        query: { auth_token: config.auth_token, timestamp: Date.now() }
     });
     socket.on('connect', function() {
         var serverip;
@@ -203,7 +203,7 @@ function setupSockets(config) {
 function onNewLine(file) {
     return function(line) {
         if (socket.connected)
-            socket.emit("l", { l: line, f: file });
+            socket.emit("l", { t: Date.now(), l: line, f: file });
         // else
         //     log("Not connected: " + file + ": " + line);
     };
