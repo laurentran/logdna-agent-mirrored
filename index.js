@@ -208,10 +208,12 @@ function streamDir(dir) {
 
     _.each(logfiles, function(file) {
         var tail = new Tail(file);
+        var meta;
 
         tail.on("line", function(line) {
+            meta = { t: Date.now(), l: line, f: file };
             if (socket.connected)
-                socket.emit("l", { t: Date.now(), l: line, f: file });
+                socket.emit("l", meta);
             // else
             //     log("Not connected: " + file + ": " + line);
         });
