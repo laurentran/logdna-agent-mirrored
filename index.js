@@ -199,21 +199,6 @@ function connectLogServer(config) {
     });
 }
 
-function onNewLine(file) {
-    return function(line) {
-        if (socket.connected)
-            socket.emit("l", { t: Date.now(), l: line, f: file });
-        // else
-        //     log("Not connected: " + file + ": " + line);
-    };
-}
-
-function onFileError(file) {
-    return function(err) {
-        log("Tail error: " + file + ": " + err);
-    };
-}
-
 function streamDir(dir) {
     var logfiles = getFiles(dir);
     var numfiles = logfiles.length;
@@ -221,12 +206,19 @@ function streamDir(dir) {
     if (numfiles > 0)
         log("Streaming " + dir + ": " + numfiles + " files");
 
-    for (var i = 0; i < numfiles; i++) {
-        var tail = new Tail(logfiles[i]);
+    _.each(logfiles, function(file) {
+        var tail = new Tail(file);
 
-        tail.on("line", onNewLine(logfiles[i]));
-        tail.on("error", onFileError(logfiles[i]));
-    }
+        tail.on("line", function(line) {
+            if (socket.connected)
+                socket.emit("l", { t: Date.now(), l: line, f: file });
+            // else
+            //     log("Not connected: " + file + ": " + line);
+        });
+        tail.on("error", function(err) {
+            log("Tail error: " + file + ": " + err);
+        });
+    });
 }
 
 function getFiles(dir, files_) {
