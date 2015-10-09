@@ -201,7 +201,7 @@ function connectLogServer(config) {
 
 function streamDir(dir) {
     var logfiles = getFiles(dir);
-    var numfiles = logfiles.length;
+    numfiles = logfiles.length;
 
     if (numfiles > 0)
         log("Streaming " + dir + ": " + numfiles + " files");
