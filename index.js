@@ -12,7 +12,7 @@ var os = require("os");
 var macaddress = require('macaddress');
 
 var socket;
-var logfiles;
+var numfiles;
 
 var DEFAULT_CONF_FILE = "/etc/logdna.conf";
 var LOGDNA_APIHOST = process.env.LDAPIHOST || "api.logdna.com";
@@ -46,9 +46,7 @@ if (process.getuid() > 0) {
     process.exit();
 }
 
-properties.parse(program.config || DEFAULT_CONF_FILE, {
-    path: true
-}, function(error, config) {
+properties.parse(program.config || DEFAULT_CONF_FILE, { path: true }, function(error, config) {
     config = config || {};
     if (!program.key && (error || !config.key)) return console.error("LogDNA Agent Key not set! Use -k to set.");
 
@@ -100,11 +98,13 @@ properties.parse(program.config || DEFAULT_CONF_FILE, {
         }
         log(program._name + " " + pkg.version + " started on " + os.hostname() + " (" + config.ip + ")");
 
-        authenticate(config);
+        getAuthToken(config, function() {
+            connectLogServer(config);
+        });
     });
 });
 
-function authenticate(config) {
+function getAuthToken(config, callback) {
     log("Authenticating Agent Key with " + LOGDNA_APIHOST + (LOGDNA_APISSL ? " (SSL)" : "") + "...");
     request.post( (LOGDNA_APISSL ? "https://" : "http://") + LOGDNA_APIHOST + "/authenticate/" + config.key, { json: { hostname: os.hostname(), mac: config.mac, ip: config.ip, agentname: program._name, agentversion: pkg.version } }, function(err, res, body) {
         if (err || res.statusCode != "200") {
@@ -115,7 +115,7 @@ function authenticate(config) {
                 log("Auth error: " + res.statusCode + ": " + JSON.stringify(body));
 
             return setTimeout(function() {
-                authenticate(config);
+                getAuthToken(config, callback);
             }, AUTHFAIL_DELAY * 1000);
         }
 
@@ -135,18 +135,16 @@ function authenticate(config) {
 
         config.auth_token = body.token;
 
-        if (!socket) {
-            // setup sockets once on initial launch
-            setupSockets(config);
-
-        } else {
-            // already setup, replace query
+        if (socket) {
+            // already setup, replace query in existing socket io connection
             socket.io.opts.query.auth_token = body.token;
         }
+
+        return callback && callback();
     });
 }
 
-function setupSockets(config) {
+function connectLogServer(config) {
     socket = io( (LOGDNA_LOGSSL ? "wss://" : "ws://") + LOGDNA_LOGHOST + ":" + LOGDNA_LOGPORT, {
         transports: ['websocket'],
         query: { auth_token: config.auth_token, timestamp: Date.now() }
@@ -158,14 +156,15 @@ function setupSockets(config) {
 
         log("Connected to " + LOGDNA_LOGHOST + ":" + LOGDNA_LOGPORT + serverip + (LOGDNA_LOGSSL ? " (SSL)" : ""));
 
-        // monitor logs
-        if (!logfiles) {
+        if (!numfiles) {
+            // start streaming logs from logdir(s) on startup
             _.each(config.logdir, function(dir) {
-                getDir(dir);
+                streamDir(dir);
             });
 
         } else {
-            log("Streaming resumed: " + logfiles.length + " files");
+            // reconnected, resume streaming
+            log("Streaming resumed: " + numfiles + " files");
         }
     });
     socket.on('error', function(err) {
@@ -174,7 +173,7 @@ function setupSockets(config) {
             // invalid token, reauth
             log("Got " + err.substring(0, 3) + " response, reauthenticating...");
             return setTimeout(function() {
-                authenticate(config);
+                getAuthToken(config);
             }, 500);
 
         } else if (~err.indexOf("403")) {
@@ -196,7 +195,7 @@ function setupSockets(config) {
         log("Reconnect error: " + err);
     });
     socket.on('event', function(data) {
-        log(data);
+        log("Unknown event received: " + data);
     });
 }
 
@@ -215,20 +214,18 @@ function onFileError(file) {
     };
 }
 
-function getDir(dir) {
-    logfiles = getFiles(dir);
+function streamDir(dir) {
+    var logfiles = getFiles(dir);
+    var numfiles = logfiles.length;
 
-    if (logfiles.length > 0)
-        log("Streaming " + dir + ": " + logfiles.length + " files");
+    if (numfiles > 0)
+        log("Streaming " + dir + ": " + numfiles + " files");
 
-    for (var i = 0; i < logfiles.length; i++) {
+    for (var i = 0; i < numfiles; i++) {
         var tail = new Tail(logfiles[i]);
 
-        // var filename = logfiles[i].split("/").pop();
-        var filename = logfiles[i];
-
-        tail.on("line", onNewLine(filename));
-        tail.on("error", onFileError(filename));
+        tail.on("line", onNewLine(logfiles[i]));
+        tail.on("error", onFileError(logfiles[i]));
     }
 }
 
@@ -241,8 +238,10 @@ function getFiles(dir, files_) {
         log("Error opening " + dir + ": " + e);
         return [];
     }
-    for (var i in files) {
-        var name = dir + '/' + files[i];
+
+    var name;
+    for (var i = 0; i < files.length; i++) {
+        name = dir + '/' + files[i];
         if (fs.statSync(name).isDirectory()) {
             getFiles(name, files_);
         } else if (name.toLowerCase().indexOf(".log") == name.length - 4 || // ends in .log
