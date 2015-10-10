@@ -224,7 +224,7 @@ function streamDir(dir) {
                 // send any buffered data
                 if (buf.length) {
                     _.each(buf, function(data) {
-                        socket.emit(data);
+                        socket.emit("l", data);
                     });
 
                     log("Sent " + buf.length + " lines queued from earlier disconnection");
