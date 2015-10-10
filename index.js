@@ -13,6 +13,8 @@ var macaddress = require('macaddress');
 
 var socket;
 var numfiles;
+var buf = [];
+var buftimeout;
 
 var DEFAULT_CONF_FILE = "/etc/logdna.conf";
 var LOGDNA_APIHOST = process.env.LDAPIHOST || "api.logdna.com";
@@ -165,6 +167,7 @@ function connectLogServer(config) {
         } else {
             // reconnected, resume streaming
             log("Streaming resumed: " + numfiles + " files");
+            clearTimeout(buftimeout);
         }
     });
     socket.on('error', function(err) {
@@ -185,6 +188,11 @@ function connectLogServer(config) {
     });
     socket.on('disconnect', function() {
         log("Disconnected from server");
+
+        // clear buffer if disconnected for more than 10s
+        buftimeout = setTimeout(function() {
+            buf = [];
+        }, 10000);
     });
     socket.on('reconnecting', function(num) {
         log("Attempting to connect #" + num + " to " + LOGDNA_LOGHOST + ":" + LOGDNA_LOGPORT + (LOGDNA_LOGSSL ? " (SSL)" : "") + " using " + config.auth_token + "...");
@@ -212,10 +220,22 @@ function streamDir(dir) {
 
         tail.on("line", function(line) {
             meta = { t: Date.now(), l: line, f: file };
-            if (socket.connected)
+            if (socket.connected) {
+                // send any buffered data
+                if (buf.length) {
+                    _.each(buf, function(data) {
+                        socket.emit(data);
+                    });
+
+                    log("Sent " + buf.length + " lines queued from earlier disconnection");
+                    buf = [];
+                }
+
                 socket.emit("l", meta);
-            // else
-            //     log("Not connected: " + file + ": " + line);
+
+            } else if (buftimeout) {
+                buf.push(meta);
+            }
         });
         tail.on("error", function(err) {
             log("Tail error: " + file + ": " + err);
