@@ -192,6 +192,7 @@ function connectLogServer(config) {
         // clear buffer if disconnected for more than 10s
         buftimeout = setTimeout(function() {
             buf = [];
+            buftimeout = null;
         }, 10000);
     });
     socket.on('reconnecting', function(num) {
