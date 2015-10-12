@@ -199,7 +199,8 @@ function connectLogServer(config) {
         log("Attempting to connect #" + num + " to " + LOGDNA_LOGHOST + ":" + LOGDNA_LOGPORT + (LOGDNA_LOGSSL ? " (SSL)" : "") + " using " + config.auth_token + "...");
         socket.io.reconnectionDelay(1000); // reset
         socket.io.reconnectionDelayMax(5000); // reset
-    });
+        socket.io.opts.query.timestamp = Date.now(); // update drift
+   });
     socket.on('reconnect_error', function(err) {
         log("Reconnect error: " + err);
     });
