@@ -7,7 +7,9 @@ var Tail = require('./tail').Tail;
 var properties = require("properties");
 var _ = require("lodash");
 var io = require('socket.io-client');
-var request = require("request");
+var http = require("http");
+var https = require("https");
+var url = require("url");
 var os = require("os");
 var macaddress = require('macaddress');
 
@@ -108,7 +110,7 @@ properties.parse(program.config || DEFAULT_CONF_FILE, { path: true }, function(e
 
 function getAuthToken(config, callback) {
     log("Authenticating Agent Key with " + LOGDNA_APIHOST + (LOGDNA_APISSL ? " (SSL)" : "") + "...");
-    request.post( (LOGDNA_APISSL ? "https://" : "http://") + LOGDNA_APIHOST + "/authenticate/" + config.key, { json: { hostname: os.hostname(), mac: config.mac, ip: config.ip, agentname: program._name, agentversion: pkg.version } }, function(err, res, body) {
+    postRequest( (LOGDNA_APISSL ? "https://" : "http://") + LOGDNA_APIHOST + "/authenticate/" + config.key, { hostname: os.hostname(), mac: config.mac, ip: config.ip, agentname: program._name, agentversion: pkg.version }, function(err, res, body) {
         if (err || res.statusCode != "200") {
             // got error, try again in an hour
             if (err)
@@ -275,6 +277,38 @@ function appender(xs) {
         xs.push(x);
         return xs;
     };
+}
+
+function postRequest(uri, postdata, callback) {
+    var options = url.parse(uri);
+    options.method = "POST";
+
+    if (typeof postdata == "object") {
+        options.headers = {
+            'Content-Type': 'application/json'
+        };
+        postdata = JSON.stringify(postdata);
+    }
+
+    var req = (options.protocol == "http:" ? http : https).request(options, function(res) {
+        res.setEncoding('utf8');
+        var body = "";
+        res.on('data', function(chunk) {
+            body += chunk;
+        });
+        res.on("end", function() {
+            if (body && body.substring(0, 1) == "{")
+                body = JSON.parse(body);
+            return callback && callback(null, res, body);
+        });
+    });
+
+    req.on("error", function(err) {
+        return callback && callback(err);
+    });
+
+    req.write(postdata);
+    req.end();
 }
 
 function log(msg) {
