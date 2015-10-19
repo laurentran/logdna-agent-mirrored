@@ -4,7 +4,7 @@ module.exports = function(grunt) {
         lineremover: {
             nukebrowser: {
                 files: {
-                    'node_modules/socket.io-client/node_modules/engine.io-client/node_modules/engine.io-parser/package.json': 'node_modules/socket.io-client/node_modules/engine.io-client/node_modules/engine.io-parser/package.json'
+                    'node_modules/ws/package.json': 'node_modules/ws/package.json'
                 },
                 options: {
                     exclusionPattern: /browser/
@@ -12,7 +12,7 @@ module.exports = function(grunt) {
             }
         },
         exec: {
-            nexe: "nexe -i index.js -o logdna-agent-linux -f -t /tmp"
+            nexe: "nexe -i index.js -o logdna-agent-linux -f -t ~/tmp -r 0.12.7"
         }
     });
     grunt.loadNpmTasks('grunt-line-remover');

@@ -3,10 +3,10 @@
 var program = require('commander');
 var pkg = require('./package.json');
 var fs = require('fs');
-var Tail = require('./tail').Tail;
+var Tail = require('tail').Tail;
 var properties = require("properties");
 var _ = require("lodash");
-var io = require('socket.io-client');
+var WebSocket = require('./logdna-websocket');
 var http = require("http");
 var https = require("https");
 var url = require("url");
@@ -23,7 +23,7 @@ var LOGDNA_APIHOST = process.env.LDAPIHOST || "api.logdna.com";
 var LOGDNA_APISSL = isNaN(process.env.USESSL) ? true : +process.env.USESSL;
 var LOGDNA_LOGHOST = process.env.LDLOGHOST;
 var LOGDNA_LOGPORT = process.env.LDLOGPORT;
-var LOGDNA_LOGSSL = process.env.LDLOGSSL;
+var LOGDNA_LOGSSL = isNaN(process.env.LDLOGSSL) ? true: +process.env.LDLOGSSL;
 var AUTHFAIL_DELAY = 3600; // 1 hr
 // var AUTHFAIL_DELAY = 10; // 10s
 
@@ -141,7 +141,7 @@ function getAuthToken(config, callback) {
 
         if (socket) {
             // already setup, replace query in existing socket io connection
-            socket.io.opts.query.auth_token = body.token;
+            socket.options.query.auth_token = body.token;
         }
 
         return callback && callback();
@@ -149,16 +149,11 @@ function getAuthToken(config, callback) {
 }
 
 function connectLogServer(config) {
-    socket = io( (LOGDNA_LOGSSL ? "wss://" : "ws://") + LOGDNA_LOGHOST + ":" + LOGDNA_LOGPORT, {
-        transports: ['websocket'],
+    socket = new WebSocket( (LOGDNA_LOGSSL ? "https://" : "http://") + LOGDNA_LOGHOST + ":" + LOGDNA_LOGPORT, {
         query: { auth_token: config.auth_token, timestamp: Date.now() }
     });
-    socket.on('connect', function() {
-        var serverip;
-        if (socket.io.engine.transport.ws && socket.io.engine.transport.ws._socket)
-            serverip = " (" + socket.io.engine.transport.ws._socket.remoteAddress + ")";
-
-        log("Connected to " + LOGDNA_LOGHOST + ":" + LOGDNA_LOGPORT + serverip + (LOGDNA_LOGSSL ? " (SSL)" : ""));
+    socket.on('open', function() {
+        log("Connected to " + LOGDNA_LOGHOST + ":" + LOGDNA_LOGPORT + " (" + socket._socket.remoteAddress + ")" + (LOGDNA_LOGSSL ? " (SSL)" : ""));
 
         if (!numfiles) {
             // start streaming logs from logdir(s) on startup
@@ -173,23 +168,24 @@ function connectLogServer(config) {
         }
     });
     socket.on('error', function(err) {
+        err = err.toString();
         log("Server error: " + err);
         if (~err.indexOf("401")) {
             // invalid token, reauth
-            log("Got " + err.substring(0, 3) + " response, reauthenticating...");
+            log("Got 401 response, reauthenticating...");
             return setTimeout(function() {
                 getAuthToken(config);
             }, 500);
 
         } else if (~err.indexOf("403")) {
             // intentional unauth
-            log("Got " + err.substring(0, 3) + " response, sleeping for " + AUTHFAIL_DELAY + "s...");
-            socket.io.reconnectionDelay(AUTHFAIL_DELAY * 1000);
-            socket.io.reconnectionDelayMax(AUTHFAIL_DELAY * 1000);
+            log("Got 403 response, sleeping for " + AUTHFAIL_DELAY + "s...");
+            socket.reconnectionDelay = AUTHFAIL_DELAY * 1000;
+            socket.reconnectionDelayMax = AUTHFAIL_DELAY * 1000;
         }
     });
-    socket.on('disconnect', function() {
-        log("Disconnected from server");
+    socket.on('close', function(code, message) {
+        log('Disconnected from server: ' + code + ': ' + message);
 
         // clear buffer if disconnected for more than 10s
         buftimeout = setTimeout(function() {
@@ -199,14 +195,11 @@ function connectLogServer(config) {
     });
     socket.on('reconnecting', function(num) {
         log("Attempting to connect #" + num + " to " + LOGDNA_LOGHOST + ":" + LOGDNA_LOGPORT + (LOGDNA_LOGSSL ? " (SSL)" : "") + " using " + config.auth_token + "...");
-        socket.io.reconnectionDelay(1000); // reset
-        socket.io.reconnectionDelayMax(5000); // reset
-        socket.io.opts.query.timestamp = Date.now(); // update drift
-   });
-    socket.on('reconnect_error', function(err) {
-        log("Reconnect error: " + err);
+        socket.reconnectionDelay = 1000; // reset
+        socket.reconnectionDelayMax = 5000; // reset
+        socket.options.query.timestamp = Date.now(); // update drift
     });
-    socket.on('event', function(data) {
+    socket.on('message', function(data) {
         log("Unknown event received: " + data);
     });
 }
@@ -223,19 +216,19 @@ function streamDir(dir) {
         var meta;
 
         tail.on("line", function(line) {
-            meta = { t: Date.now(), l: line, f: file };
+            meta = JSON.stringify({ event: "l", t: Date.now(), l: line, f: file });
             if (socket.connected) {
                 // send any buffered data
                 if (buf.length) {
                     _.each(buf, function(data) {
-                        socket.emit("l", data);
+                        socket.send(data);
                     });
 
                     log("Sent " + buf.length + " lines queued from earlier disconnection");
                     buf = [];
                 }
 
-                socket.emit("l", meta);
+                socket.send(meta);
 
             } else if (buftimeout) {
                 buf.push(meta);
