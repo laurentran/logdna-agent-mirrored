@@ -126,7 +126,7 @@ function getAuthToken(config, callback) {
         // console.log(body);
         log("Auth success, got token: " + body.token);
 
-        if (LOGDNA_LOGHOST || LOGDNA_LOGPORT || LOGDNA_LOGSSL) {
+        if (LOGDNA_LOGHOST || LOGDNA_LOGPORT) {
             LOGDNA_LOGHOST = LOGDNA_LOGHOST || "logs.logdna.com";
             LOGDNA_LOGPORT = LOGDNA_LOGPORT || 80;
             LOGDNA_LOGSSL = LOGDNA_LOGSSL || false;
