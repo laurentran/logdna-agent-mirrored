@@ -20,6 +20,7 @@ cmd="logdna-agent-linux"
 name=`basename $0`
 pid_file="/var/run/$name.pid"
 stdout_log="/var/log/$name.log"
+conf_file="/etc/logdna.conf"
 
 get_pid() {
     cat "$pid_file"
@@ -34,6 +35,11 @@ case "$1" in
     if is_running; then
         echo "Already started"
     else
+        if [[ ! -f "$conf_file" ]]; then
+            echo "Error: LogDNA Agent Key not set! Use $cmd -k to set or $cmd -h for help."
+            exit 1
+        fi
+
         echo "Starting $name..."
         cd "$dir"
         if [ -z "$user" ]; then
