@@ -1,6 +1,6 @@
 #!/bin/sh
 ### BEGIN INIT INFO
-# Provides:
+# Provides:          logdna-agent
 # Required-Start:    $remote_fs $syslog
 # Required-Stop:     $remote_fs $syslog
 # Default-Start:     2 3 4 5
@@ -8,6 +8,11 @@
 # Short-Description: Starts LogDNA Agent at boot
 # Description:       Enables LogDNA Agent service.
 ### END INIT INFO
+
+if [ $(id -u) -ne 0 ]; then
+    echo "Error: This program can only be used by the root user."
+    exit 1
+fi
 
 dir="/usr/bin/"
 cmd="logdna-agent-linux"
@@ -29,7 +34,7 @@ case "$1" in
     if is_running; then
         echo "Already started"
     else
-        echo "Starting $name"
+        echo "Starting $name..."
         cd "$dir"
         if [ -z "$user" ]; then
             sudo $cmd >> "$stdout_log" 2>&1 &
