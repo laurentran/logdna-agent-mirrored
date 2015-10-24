@@ -1,6 +1,6 @@
 {
   "name": "logdna-agent-linux",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "LogDNA's Linux Collector Agent",
   "main": "index.js",
   "scripts": {

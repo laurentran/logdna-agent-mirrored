@@ -35,7 +35,7 @@ case "$1" in
     if is_running; then
         echo "Already started"
     else
-        if [[ ! -f "$conf_file" ]]; then
+        if [ ! -f "$conf_file" ]; then
             echo "Error: LogDNA Agent Key not set! Use $cmd -k to set or $cmd -h for help."
             exit 1
         fi
