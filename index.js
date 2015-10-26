@@ -91,6 +91,8 @@ properties.parse(program.config || DEFAULT_CONF_FILE, { path: true }, function(e
         return;
     }
 
+    config.hostname = os.hostname().replace(".ec2.internal", "");
+
     macaddress.all(function (err, all) {
         var ifaces = [ 'eth0', 'eth1', 'eth2', 'eth3', 'eth4', 'eth5', 'en0', 'en1', 'en2', 'en3', 'en4', 'en5' ];
         for (var i = 0; i < ifaces.length; i++) {
@@ -100,7 +102,7 @@ properties.parse(program.config || DEFAULT_CONF_FILE, { path: true }, function(e
                 break;
             }
         }
-        log(program._name + " " + pkg.version + " started on " + os.hostname() + " (" + config.ip + ")");
+        log(program._name + " " + pkg.version + " started on " + config.hostname + " (" + config.ip + ")");
 
         getAuthToken(config, function() {
             connectLogServer(config);
@@ -110,7 +112,7 @@ properties.parse(program.config || DEFAULT_CONF_FILE, { path: true }, function(e
 
 function getAuthToken(config, callback) {
     log("Authenticating Agent Key with " + LOGDNA_APIHOST + (LOGDNA_APISSL ? " (SSL)" : "") + "...");
-    postRequest( (LOGDNA_APISSL ? "https://" : "http://") + LOGDNA_APIHOST + "/authenticate/" + config.key, { hostname: os.hostname(), mac: config.mac, ip: config.ip, agentname: program._name, agentversion: pkg.version }, function(err, res, body) {
+    postRequest( (LOGDNA_APISSL ? "https://" : "http://") + LOGDNA_APIHOST + "/authenticate/" + config.key, { hostname: config.hostname, mac: config.mac, ip: config.ip, agentname: program._name, agentversion: pkg.version }, function(err, res, body) {
         if (err || res.statusCode != "200") {
             // got error, try again in an hour
             if (err)
