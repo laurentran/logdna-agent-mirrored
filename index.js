@@ -96,7 +96,7 @@ properties.parse(program.config || DEFAULT_CONF_FILE, { path: true }, function(e
     config.hostname = os.hostname().replace(".ec2.internal", "");
 
     distro(function (err, dist) {
-        config.dist = dist.name;
+        if (!err && dist) config.osdist = dist.name;
 
         awslocate.getAvailabilityZone(function (err, az) {
             config.awsaz = az;
@@ -122,7 +122,7 @@ properties.parse(program.config || DEFAULT_CONF_FILE, { path: true }, function(e
 
 function getAuthToken(config, callback) {
     log("Authenticating Agent Key with " + LOGDNA_APIHOST + (LOGDNA_APISSL ? " (SSL)" : "") + "...");
-    postRequest( (LOGDNA_APISSL ? "https://" : "http://") + LOGDNA_APIHOST + "/authenticate/" + config.key, { hostname: config.hostname, mac: config.mac, ip: config.ip, agentname: program._name, agentversion: pkg.version, osdist: config.dist, awsaz: config.awsaz }, function(err, res, body) {
+    postRequest( (LOGDNA_APISSL ? "https://" : "http://") + LOGDNA_APIHOST + "/authenticate/" + config.key, { hostname: config.hostname, mac: config.mac, ip: config.ip, agentname: program._name, agentversion: pkg.version, osdist: config.osdist, awsaz: config.awsaz }, function(err, res, body) {
         if (err || res.statusCode != "200") {
             // got error, try again in an hour
             if (err)
