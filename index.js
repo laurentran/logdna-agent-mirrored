@@ -12,6 +12,7 @@ var https = require("https");
 var url = require("url");
 var os = require("os");
 var distro = require('linux-distro');
+var awslocate = require('aws-locate');
 var macaddress = require('macaddress');
 
 var socket;
@@ -97,19 +98,23 @@ properties.parse(program.config || DEFAULT_CONF_FILE, { path: true }, function(e
     distro(function (err, dist) {
         config.dist = dist.name;
 
-        macaddress.all(function (err, all) {
-            var ifaces = [ 'eth0', 'eth1', 'eth2', 'eth3', 'eth4', 'eth5', 'en0', 'en1', 'en2', 'en3', 'en4', 'en5' ];
-            for (var i = 0; i < ifaces.length; i++) {
-                if (all[ifaces[i]]) {
-                    config.mac = all[ifaces[i]].mac;
-                    config.ip = all[ifaces[i]].ipv4 || all[ifaces[i]].ipv6;
-                    break;
-                }
-            }
-            log(program._name + " " + pkg.version + " started on " + config.hostname + " (" + config.ip + ")");
+        awslocate.getAvailabilityZone(function (err, az) {
+            config.awsaz = az;
 
-            getAuthToken(config, function() {
-                connectLogServer(config);
+            macaddress.all(function (err, all) {
+                var ifaces = [ 'eth0', 'eth1', 'eth2', 'eth3', 'eth4', 'eth5', 'en0', 'en1', 'en2', 'en3', 'en4', 'en5' ];
+                for (var i = 0; i < ifaces.length; i++) {
+                    if (all[ifaces[i]]) {
+                        config.mac = all[ifaces[i]].mac;
+                        config.ip = all[ifaces[i]].ipv4 || all[ifaces[i]].ipv6;
+                        break;
+                    }
+                }
+                log(program._name + " " + pkg.version + " started on " + config.hostname + " (" + config.ip + ")");
+
+                getAuthToken(config, function() {
+                    connectLogServer(config);
+                });
             });
         });
     });
@@ -117,7 +122,7 @@ properties.parse(program.config || DEFAULT_CONF_FILE, { path: true }, function(e
 
 function getAuthToken(config, callback) {
     log("Authenticating Agent Key with " + LOGDNA_APIHOST + (LOGDNA_APISSL ? " (SSL)" : "") + "...");
-    postRequest( (LOGDNA_APISSL ? "https://" : "http://") + LOGDNA_APIHOST + "/authenticate/" + config.key, { hostname: config.hostname, mac: config.mac, ip: config.ip, agentname: program._name, agentversion: pkg.version, osdist: config.dist }, function(err, res, body) {
+    postRequest( (LOGDNA_APISSL ? "https://" : "http://") + LOGDNA_APIHOST + "/authenticate/" + config.key, { hostname: config.hostname, mac: config.mac, ip: config.ip, agentname: program._name, agentversion: pkg.version, osdist: config.dist, awsaz: config.awsaz }, function(err, res, body) {
         if (err || res.statusCode != "200") {
             // got error, try again in an hour
             if (err)

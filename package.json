@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/answerbook/logdna-agent-linux",
   "dependencies": {
+    "aws-locate": "0.0.3",
     "commander": "^2.8.1",
     "linux-distro": "^3.0.1",
     "lodash": "^3.10.1",
