@@ -11,6 +11,7 @@ var http = require("http");
 var https = require("https");
 var url = require("url");
 var os = require("os");
+var distro = require('linux-distro');
 var macaddress = require('macaddress');
 
 var socket;
@@ -93,26 +94,30 @@ properties.parse(program.config || DEFAULT_CONF_FILE, { path: true }, function(e
 
     config.hostname = os.hostname().replace(".ec2.internal", "");
 
-    macaddress.all(function (err, all) {
-        var ifaces = [ 'eth0', 'eth1', 'eth2', 'eth3', 'eth4', 'eth5', 'en0', 'en1', 'en2', 'en3', 'en4', 'en5' ];
-        for (var i = 0; i < ifaces.length; i++) {
-            if (all[ifaces[i]]) {
-                config.mac = all[ifaces[i]].mac;
-                config.ip = all[ifaces[i]].ipv4 || all[ifaces[i]].ipv6;
-                break;
-            }
-        }
-        log(program._name + " " + pkg.version + " started on " + config.hostname + " (" + config.ip + ")");
+    distro(function (err, dist) {
+        config.dist = dist.name;
 
-        getAuthToken(config, function() {
-            connectLogServer(config);
+        macaddress.all(function (err, all) {
+            var ifaces = [ 'eth0', 'eth1', 'eth2', 'eth3', 'eth4', 'eth5', 'en0', 'en1', 'en2', 'en3', 'en4', 'en5' ];
+            for (var i = 0; i < ifaces.length; i++) {
+                if (all[ifaces[i]]) {
+                    config.mac = all[ifaces[i]].mac;
+                    config.ip = all[ifaces[i]].ipv4 || all[ifaces[i]].ipv6;
+                    break;
+                }
+            }
+            log(program._name + " " + pkg.version + " started on " + config.hostname + " (" + config.ip + ")");
+
+            getAuthToken(config, function() {
+                connectLogServer(config);
+            });
         });
     });
 });
 
 function getAuthToken(config, callback) {
     log("Authenticating Agent Key with " + LOGDNA_APIHOST + (LOGDNA_APISSL ? " (SSL)" : "") + "...");
-    postRequest( (LOGDNA_APISSL ? "https://" : "http://") + LOGDNA_APIHOST + "/authenticate/" + config.key, { hostname: config.hostname, mac: config.mac, ip: config.ip, agentname: program._name, agentversion: pkg.version }, function(err, res, body) {
+    postRequest( (LOGDNA_APISSL ? "https://" : "http://") + LOGDNA_APIHOST + "/authenticate/" + config.key, { hostname: config.hostname, mac: config.mac, ip: config.ip, agentname: program._name, agentversion: pkg.version, osdist: config.dist }, function(err, res, body) {
         if (err || res.statusCode != "200") {
             // got error, try again in an hour
             if (err)
