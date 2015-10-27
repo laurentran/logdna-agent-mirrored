@@ -19,6 +19,7 @@
   "dependencies": {
     "aws-locate": "0.0.3",
     "commander": "^2.8.1",
+    "getos": "^2.4.0",
     "lodash": "^3.10.1",
     "macaddress": "^0.2.8",
     "properties": "^1.2.1",
