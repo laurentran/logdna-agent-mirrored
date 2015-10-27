@@ -1,7 +1,7 @@
 /**
  * Things we will need
  */
-var async = require('async')
+var async = require('./node_modules/getos/node_modules/async')
 var distros = require('./node_modules/getos/os.json')
 var fs = require('fs')
 var os = require('os')
