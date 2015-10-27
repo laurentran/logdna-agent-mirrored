@@ -11,7 +11,7 @@ var http = require("http");
 var https = require("https");
 var url = require("url");
 var os = require("os");
-var distro = require('linux-distro');
+var distro = require('./linux-distro');
 var awslocate = require('aws-locate');
 var macaddress = require('macaddress');
 

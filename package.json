@@ -19,7 +19,6 @@
   "dependencies": {
     "aws-locate": "0.0.3",
     "commander": "^2.8.1",
-    "linux-distro": "^3.0.1",
     "lodash": "^3.10.1",
     "macaddress": "^0.2.8",
     "properties": "^1.2.1",
