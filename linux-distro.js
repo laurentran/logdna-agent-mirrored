@@ -1,6 +1,6 @@
 'use strict';
 var execFile = require('child_process').execFile;
-var getos = require('getos');
+var getos = require('./getos');
 
 module.exports = function (cb) {
     if (process.platform !== 'linux') {
