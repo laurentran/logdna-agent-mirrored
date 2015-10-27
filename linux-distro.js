@@ -1,5 +1,4 @@
-'use strict';
-var execFile = require('child_process').execFile;
+var fs = require("fs");
 var getos = require('./getos');
 
 module.exports = function (cb) {
@@ -7,9 +6,9 @@ module.exports = function (cb) {
         throw new Error('Only Linux systems are supported');
     }
 
-    execFile('lsb_release', ['-a', '--short'], function (err, stdout) {
+    fs.readFile("/etc/os-release", function(err, file) {
         if (err) {
-            getos(function (err, res) {
+            return getos(function (err, res) {
                 if (err) {
                     cb(err);
                     return;
@@ -22,16 +21,24 @@ module.exports = function (cb) {
                     code: res.codename
                 });
             });
-            return; // by LLIU@151026...missing return
         }
 
-        stdout = stdout.split('\n');
+        var osdist = {};
+        file = file.toString().split('\n');
+        for (var i = 0; i < file.length; i++) {
+            if (file[i] && file[i].trim()) {
+                var line = file[i].split('=');
+                line[0] = line[0].trim().replace(/^\"/, "").replace(/\"$/, "");
+                line[1] = line[1].trim().replace(/^\"/, "").replace(/\"$/, "");
+                osdist[line[0].toUpperCase()] = line[1];
+            }
+        }
 
-        cb(null, {
-            os: stdout[0],
-            name: stdout[1],
-            release: stdout[2],
-            code: stdout[3]
+        return cb(null, {
+            os: osdist["NAME"],
+            name: osdist["PRETTY_NAME"],
+            release: osdist["VERSION_ID"],
+            code: osdist["VERSION"]
         });
     });
 };
