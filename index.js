@@ -228,7 +228,7 @@ function streamDir(dir) {
         var meta;
 
         tail.on("line", function(line) {
-            meta = JSON.stringify({ event: "l", t: Date.now(), l: line, f: file });
+            meta = JSON.stringify({ e: "l", t: Date.now(), l: line, f: file });
             if (socket.connected) {
                 // send any buffered data
                 if (buf.length) {
