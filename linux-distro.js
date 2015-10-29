@@ -2,10 +2,6 @@ var fs = require("fs");
 var getos = require('./getos');
 
 module.exports = function (cb) {
-    if (process.platform !== 'linux') {
-        throw new Error('Only Linux systems are supported');
-    }
-
     fs.readFile("/etc/os-release", function(err, file) {
         if (err) {
             return getos(function (err, res) {

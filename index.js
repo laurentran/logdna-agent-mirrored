@@ -3,7 +3,7 @@
 var program = require('commander');
 var pkg = require('./package.json');
 var fs = require('fs');
-var Tail = require('tail').Tail;
+var Tail = require('always-tail2');
 var properties = require("properties");
 var _ = require("lodash");
 var WebSocket = require('./logdna-websocket');
@@ -96,7 +96,7 @@ properties.parse(program.config || DEFAULT_CONF_FILE, { path: true }, function(e
     config.hostname = os.hostname().replace(".ec2.internal", "");
 
     distro(function (err, dist) {
-        if (!err && dist) config.osdist = dist.os + (dist.release ? " " + dist.release : "");
+        if (!err && dist && dist.os) config.osdist = dist.os + (dist.release ? " " + dist.release : "");
 
         awslocate.getAvailabilityZone(function (err, az) {
             config.awsaz = az;
@@ -249,6 +249,7 @@ function streamDir(dir) {
         tail.on("error", function(err) {
             log("Tail error: " + file + ": " + err);
         });
+        tail.watch();
     });
 }
 
