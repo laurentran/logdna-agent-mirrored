@@ -6,12 +6,12 @@ var fs = require('fs');
 var Tail = require('always-tail2');
 var properties = require("properties");
 var _ = require("lodash");
-var WebSocket = require('./logdna-websocket');
+var WebSocket = require('./lib/logdna-websocket');
 var http = require("http");
 var https = require("https");
 var url = require("url");
 var os = require("os");
-var distro = require('./linux-distro');
+var distro = require('./lib/linux-distro');
 var awslocate = require('aws-locate');
 var macaddress = require('macaddress');
 
