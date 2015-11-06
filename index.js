@@ -16,7 +16,7 @@ var awslocate = require('aws-locate');
 var macaddress = require('macaddress');
 
 var socket;
-var numfiles;
+var numfiles = 0;
 var buf = [];
 var buftimeout;
 
@@ -218,10 +218,10 @@ function connectLogServer(config) {
 
 function streamDir(dir) {
     var logfiles = getFiles(dir);
-    numfiles = logfiles.length;
+    numfiles += logfiles.length;
 
-    if (numfiles > 0)
-        log("Streaming " + dir + ": " + numfiles + " files");
+    if (logfiles.length > 0)
+        log("Streaming " + dir + ": " + logfiles.length + " files");
 
     _.each(logfiles, function(file) {
         var tail = new Tail(file);
