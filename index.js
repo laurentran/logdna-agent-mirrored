@@ -29,6 +29,10 @@ var LOGDNA_LOGSSL = isNaN(process.env.LDLOGSSL) ? true: +process.env.LDLOGSSL;
 var AUTHFAIL_DELAY = 3600; // 1 hr
 // var AUTHFAIL_DELAY = 10; // 10s
 
+var globalExclude = [
+    '/var/log/wtmp'
+];
+
 process.title = 'logdna-agent-linux';
 program._name = 'logdna-agent-linux';
 program
@@ -268,8 +272,11 @@ function getFiles(dir, files_) {
         name = dir + '/' + files[i];
         if (fs.statSync(name).isDirectory()) {
             getFiles(name, files_);
-        } else if (name.toLowerCase().indexOf(".log") == name.length - 4 || // ends in .log
-                  (!~name.indexOf(".") && !~name.indexOf("-20")) // extension-less files but not patterns like cron-20150928
+        } else if (
+                (
+                    files[i].toLowerCase().indexOf(".log") == files[i].length - 4 || // ends in .log
+                    (!~files[i].indexOf(".") && !~files[i].indexOf("-20")) // extension-less files but not patterns like cron-20150928
+                ) && !~globalExclude.indexOf(name)
             ) {
             files_.push(name);
         }
