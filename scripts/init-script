@@ -16,7 +16,7 @@ fi
 
 dir="/usr/bin/"
 name="logdna-agent"
-cmd="logdna-agent-linux"
+cmd="logdna-agent"
 pid_file="/var/run/$name.pid"
 stdout_log="/var/log/$name.log"
 conf_file="/etc/logdna.conf"
