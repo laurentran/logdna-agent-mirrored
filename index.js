@@ -33,8 +33,8 @@ var globalExclude = [
     '/var/log/wtmp'
 ];
 
-process.title = 'logdna-agent-linux';
-program._name = 'logdna-agent-linux';
+process.title = 'logdna-agent';
+program._name = 'logdna-agent';
 program
     .version(pkg.version, "-v, --version")
     .description('This agent collect and ship logs for processing. Defaults to /var/log if run without parameters.')
@@ -44,9 +44,9 @@ program
     .on('--help', function() {
         console.log('  Examples:');
         console.log();
-        console.log('    $ logdna-agent-linux --key YOUR_AGENT_KEY');
-        console.log('    $ logdna-agent-linux -d /home/ec2-user/logs');
-        console.log('    $ logdna-agent-linux -d /home/ec2-user/logs -d /path/to/another/log_dir        # multiple logdirs in 1 go');
+        console.log('    $ logdna-agent --key YOUR_AGENT_KEY');
+        console.log('    $ logdna-agent -d /home/ec2-user/logs');
+        console.log('    $ logdna-agent -d /home/ec2-user/logs -d /path/to/another/log_dir        # multiple logdirs in 1 go');
         console.log();
     })
     .parse(process.argv);
@@ -126,7 +126,7 @@ properties.parse(program.config || DEFAULT_CONF_FILE, { path: true }, function(e
 
 function getAuthToken(config, callback) {
     log("Authenticating Agent Key with " + LOGDNA_APIHOST + (LOGDNA_APISSL ? " (SSL)" : "") + "...");
-    postRequest( (LOGDNA_APISSL ? "https://" : "http://") + LOGDNA_APIHOST + "/authenticate/" + config.key, { hostname: config.hostname, mac: config.mac, ip: config.ip, agentname: program._name, agentversion: pkg.version, osdist: config.osdist, awsaz: config.awsaz }, function(err, res, body) {
+    postRequest( (LOGDNA_APISSL ? "https://" : "http://") + LOGDNA_APIHOST + "/authenticate/" + config.key, { hostname: config.hostname, mac: config.mac, ip: config.ip, agentname: program._name + "-linux", agentversion: pkg.version, osdist: config.osdist, awsaz: config.awsaz }, function(err, res, body) {
         if (err || res.statusCode != "200") {
             // got error, try again in an hour
             if (err)
