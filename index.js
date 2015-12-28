@@ -26,11 +26,17 @@ var LOGDNA_APISSL = isNaN(process.env.USESSL) ? true : +process.env.USESSL;
 var LOGDNA_LOGHOST = process.env.LDLOGHOST;
 var LOGDNA_LOGPORT = process.env.LDLOGPORT;
 var LOGDNA_LOGSSL = isNaN(process.env.LDLOGSSL) ? true: +process.env.LDLOGSSL;
+var AUTHERROR_DELAY = 60; // 1 min
 var AUTHFAIL_DELAY = 3600; // 1 hr
 // var AUTHFAIL_DELAY = 10; // 10s
 
 var globalExclude = [
-    '/var/log/wtmp'
+    '/var/log/wtmp',
+    '/var/log/btmp',
+    '/var/log/utmp',
+    '/var/log/wtmpx',
+    '/var/log/btmpx',
+    '/var/log/utmpx',
 ];
 
 process.title = 'logdna-agent';
@@ -131,12 +137,16 @@ function getAuthToken(config, callback) {
             // got error, try again in an hour
             if (err)
                 log("Auth error: " + err);
-            else
-                log("Auth error: " + res.statusCode + ": " + JSON.stringify(body));
+                return setTimeout(function() {
+                    getAuthToken(config, callback);
+                }, AUTHERROR_DELAY * 1000);
 
-            return setTimeout(function() {
-                getAuthToken(config, callback);
-            }, AUTHFAIL_DELAY * 1000);
+            else {
+                log("Auth error: " + res.statusCode + ": " + JSON.stringify(body));
+                return setTimeout(function() {
+                    getAuthToken(config, callback);
+                }, AUTHFAIL_DELAY * 1000);
+            }
         }
 
         // console.log(body);
@@ -203,11 +213,11 @@ function connectLogServer(config) {
     socket.on('close', function(code, message) {
         log('Disconnected from server: ' + code + ': ' + message);
 
-        // clear buffer if disconnected for more than 10s
+        // clear buffer if disconnected for more than 120s
         buftimeout = setTimeout(function() {
             buf = [];
             buftimeout = null;
-        }, 10000);
+        }, 120000);
     });
     socket.on('reconnecting', function(num) {
         log("Attempting to connect #" + num + " to " + LOGDNA_LOGHOST + ":" + LOGDNA_LOGPORT + (LOGDNA_LOGSSL ? " (SSL)" : "") + " using " + config.auth_token + "...");
@@ -292,8 +302,9 @@ function appender(xs) {
     };
 }
 
+var options, req, body;
 function postRequest(uri, postdata, callback) {
-    var options = url.parse(uri);
+    options = url.parse(uri);
     options.method = "POST";
 
     if (typeof postdata == "object") {
@@ -303,9 +314,9 @@ function postRequest(uri, postdata, callback) {
         postdata = JSON.stringify(postdata);
     }
 
-    var req = (options.protocol == "http:" ? http : https).request(options, function(res) {
+    req = (options.protocol == "http:" ? http : https).request(options, function(res) {
         res.setEncoding('utf8');
-        var body = "";
+        body = "";
         res.on('data', function(chunk) {
             body += chunk;
         });
