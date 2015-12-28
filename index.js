@@ -135,13 +135,13 @@ function getAuthToken(config, callback) {
     postRequest( (LOGDNA_APISSL ? "https://" : "http://") + LOGDNA_APIHOST + "/authenticate/" + config.key, { hostname: config.hostname, mac: config.mac, ip: config.ip, agentname: program._name + "-linux", agentversion: pkg.version, osdist: config.osdist, awsaz: config.awsaz }, function(err, res, body) {
         if (err || res.statusCode != "200") {
             // got error, try again in an hour
-            if (err)
+            if (err) {
                 log("Auth error: " + err);
                 return setTimeout(function() {
                     getAuthToken(config, callback);
                 }, AUTHERROR_DELAY * 1000);
 
-            else {
+            } else {
                 log("Auth error: " + res.statusCode + ": " + JSON.stringify(body));
                 return setTimeout(function() {
                     getAuthToken(config, callback);
