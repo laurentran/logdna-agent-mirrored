@@ -60,6 +60,8 @@ if (process.getuid() > 0) {
     process.exit();
 }
 
+minireq.setUA = program._name + "-linux/" + pkg.version;
+
 properties.parse(program.config || DEFAULT_CONF_FILE, { path: true }, function(error, config) {
     config = config || {};
     if (!program.key && (error || !config.key)) return console.error("LogDNA Agent Key not set! Use -k to set.");
