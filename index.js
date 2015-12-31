@@ -6,10 +6,8 @@ var fs = require('fs');
 var Tail = require('always-tail2');
 var properties = require("properties");
 var _ = require("lodash");
+var minireq = ("./lib/minireq");
 var WebSocket = require('./lib/logdna-websocket');
-var http = require("http");
-var https = require("https");
-var url = require("url");
 var os = require("os");
 var distro = require('./lib/linux-distro');
 var awslocate = require('aws-locate');
@@ -44,7 +42,7 @@ program._name = 'logdna-agent';
 program
     .version(pkg.version, "-v, --version")
     .description('This agent collect and ship logs for processing. Defaults to /var/log if run without parameters.')
-    .option('-c, --config <file>', 'uses alternate config file (default: /etc/logdna.conf)')
+    .option('-c, --config <file>', 'uses alternate config file (default: ' + DEFAULT_CONF_FILE + ')')
     .option('-k, --key <key>', 'sets LogDNA Agent Key in config')
     .option('-d, --logdir <dir>', 'adds custom log dir to config', appender(), [])
     .on('--help', function() {
@@ -74,10 +72,10 @@ properties.parse(program.config || DEFAULT_CONF_FILE, { path: true }, function(e
 
     var saveConfig = function(callback) {
         properties.stringify(config, {
-            path: program.config || "/etc/logdna.conf"
+            path: program.config || DEFAULT_CONF_FILE
         }, function(err) {
             if (err)
-                console.error("Error while saving to: " + (program.config || "/etc/logdna.conf") + ": " + err);
+                console.error("Error while saving to: " + (program.config || DEFAULT_CONF_FILE) + ": " + err);
             else
                 callback();
         });
@@ -132,9 +130,9 @@ properties.parse(program.config || DEFAULT_CONF_FILE, { path: true }, function(e
 
 function getAuthToken(config, callback) {
     log("Authenticating Agent Key with " + LOGDNA_APIHOST + (LOGDNA_APISSL ? " (SSL)" : "") + "...");
-    postRequest( (LOGDNA_APISSL ? "https://" : "http://") + LOGDNA_APIHOST + "/authenticate/" + config.key, { hostname: config.hostname, mac: config.mac, ip: config.ip, agentname: program._name + "-linux", agentversion: pkg.version, osdist: config.osdist, awsaz: config.awsaz }, function(err, res, body) {
+    minireq.post( (LOGDNA_APISSL ? "https://" : "http://") + LOGDNA_APIHOST + "/authenticate/" + config.key, { hostname: config.hostname, mac: config.mac, ip: config.ip, agentname: program._name + "-linux", agentversion: pkg.version, osdist: config.osdist, awsaz: config.awsaz }, function(err, res, body) {
         if (err || res.statusCode != "200") {
-            // got error, try again in an hour
+            // got error, try again after appropriate delay
             if (err) {
                 log("Auth error: " + err);
                 return setTimeout(function() {
@@ -300,39 +298,6 @@ function appender(xs) {
         xs.push(x);
         return xs;
     };
-}
-
-var options, req, body;
-function postRequest(uri, postdata, callback) {
-    options = url.parse(uri);
-    options.method = "POST";
-
-    if (typeof postdata == "object") {
-        options.headers = {
-            'Content-Type': 'application/json'
-        };
-        postdata = JSON.stringify(postdata);
-    }
-
-    req = (options.protocol == "http:" ? http : https).request(options, function(res) {
-        res.setEncoding('utf8');
-        body = "";
-        res.on('data', function(chunk) {
-            body += chunk;
-        });
-        res.on("end", function() {
-            if (body && body.substring(0, 1) == "{")
-                body = JSON.parse(body);
-            return callback && callback(null, res, body);
-        });
-    });
-
-    req.on("error", function(err) {
-        return callback && callback(err);
-    });
-
-    req.write(postdata);
-    req.end();
 }
 
 function log(msg) {
