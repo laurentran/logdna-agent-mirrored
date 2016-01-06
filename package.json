@@ -1,6 +1,6 @@
 {
   "name": "logdna-agent-linux",
-  "version": "1.0.12",
+  "version": "1.0.13",
   "description": "LogDNA Linux Collector Agent",
   "main": "index.js",
   "scripts": {
@@ -17,7 +17,7 @@
   },
   "homepage": "https://github.com/answerbook/logdna-agent-linux",
   "dependencies": {
-    "always-tail2": "^1.0.0",
+    "always-tail": "^0.2.0",
     "aws-locate": "0.0.3",
     "commander": "^2.8.1",
     "getos": "^2.4.0",
