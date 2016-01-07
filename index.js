@@ -230,7 +230,7 @@ function connectLogServer(config) {
         socket.options.query.timestamp = Date.now(); // update drift
     });
     socket.on('message', function(data) {
-        if (data.substring("{") === 0) {
+        if (data.substring(0, 1) == "{") {
             data = JSON.parse(data);
 
             if (data.e == "u" && config.autoupdate != "0") {
