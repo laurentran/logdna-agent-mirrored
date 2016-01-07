@@ -12,6 +12,7 @@ var os = require("os");
 var distro = require('./lib/linux-distro');
 var awslocate = require('aws-locate');
 var macaddress = require('macaddress');
+var spawn = require('child_process').spawn;
 
 var socket;
 var numfiles = 0;
@@ -229,7 +230,21 @@ function connectLogServer(config) {
         socket.options.query.timestamp = Date.now(); // update drift
     });
     socket.on('message', function(data) {
-        log("Unknown event received: " + data);
+        if (data.substring("{") === 0) {
+            data = JSON.parse(data);
+
+            if (data.e == "u" && config.autoupdate != "0") {
+                // update self
+                spawn('/bin/bash', ['-c',
+                    'if [[ ! -z $(which apt-get) ]]; then apt-get update; echo y|apt-get install logdna-agent; elif [[ ! -z $(which yum) ]]; then yum clean expire-cache; yum -y install logdna-agent; elif [[ ! -z $(which zypper) ]]; then zypper refresh; zypper install -y logdna-agent; fi; sleep 1; /etc/init.d/logdna-agent start'
+                ]);
+                return;
+            }
+
+            log("Unknown event received: " + JSON.stringify(data));
+
+        } else
+            log("Unknown event received: " + data);
     });
 }
 
