@@ -24,9 +24,10 @@ var LOGDNA_APISSL = isNaN(process.env.USESSL) ? true : +process.env.USESSL;
 var LOGDNA_LOGHOST = process.env.LDLOGHOST;
 var LOGDNA_LOGPORT = process.env.LDLOGPORT;
 var LOGDNA_LOGSSL = isNaN(process.env.LDLOGSSL) ? true: +process.env.LDLOGSSL;
-var AUTHERROR_DELAY = 60; // 1 min
-var AUTHFAIL_DELAY = 3600; // 1 hr
-// var AUTHFAIL_DELAY = 10; // 10s
+var STATS_INTERVAL = 300000; // 5 min
+var AUTHERROR_DELAY = 60000; // 1 min
+var AUTHFAIL_DELAY = 3600000; // 1 hr
+// var AUTHFAIL_DELAY = 10000; // 10s
 
 var globalExclude = [
     '/var/log/wtmp',
@@ -139,13 +140,13 @@ function getAuthToken(config, callback) {
                 log("Auth error: " + err);
                 return setTimeout(function() {
                     getAuthToken(config, callback);
-                }, AUTHERROR_DELAY * 1000);
+                }, AUTHERROR_DELAY);
 
             } else {
                 log("Auth error: " + res.statusCode + ": " + JSON.stringify(body));
                 return setTimeout(function() {
                     getAuthToken(config, callback);
-                }, AUTHFAIL_DELAY * 1000);
+                }, AUTHFAIL_DELAY);
             }
         }
 
@@ -187,6 +188,8 @@ function connectLogServer(config) {
                 streamDir(dir);
             });
 
+            setTimeout(sendStats, STATS_INTERVAL);
+
         } else {
             // reconnected, resume streaming
             log("Streaming resumed: " + numfiles + " files");
@@ -205,9 +208,9 @@ function connectLogServer(config) {
 
         } else if (~err.indexOf("403")) {
             // intentional unauth
-            log("Got 403 response, sleeping for " + AUTHFAIL_DELAY + "s...");
-            socket.reconnectionDelay = AUTHFAIL_DELAY * 1000;
-            socket.reconnectionDelayMax = AUTHFAIL_DELAY * 1000;
+            log("Got 403 response, sleeping for " + AUTHFAIL_DELAY + "ms...");
+            socket.reconnectionDelay = AUTHFAIL_DELAY;
+            socket.reconnectionDelayMax = AUTHFAIL_DELAY;
         }
     });
     socket.on('close', function(code, message) {
@@ -292,6 +295,13 @@ function getFiles(dir, files_) {
         }
     }
     return files_;
+}
+
+function sendStats() {
+    if (socket.connected) {
+        socket.send(JSON.stringify({ e: "s", m: process.memoryUsage() }));
+    }
+    setTimeout(sendStats, STATS_INTERVAL);
 }
 
 function appender(xs) {
