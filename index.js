@@ -241,6 +241,14 @@ function connectLogServer(config) {
                 return;
             }
 
+            if (data.e == "r") {
+                // restart self
+                spawn('/bin/bash', ['-c',
+                    '/etc/init.d/logdna-agent restart'
+                ]);
+                return;
+            }
+
             log("Unknown event received: " + JSON.stringify(data));
 
         } else
