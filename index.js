@@ -256,7 +256,7 @@ function streamDir(dir) {
         log("Streaming " + dir + ": " + logfiles.length + " files");
 
     _.each(logfiles, function(file) {
-        var tail = new Tail(file);
+        var tail = new Tail(file, "\n", { interval: 250 });
         var meta;
 
         tail.on("line", function(line) {
