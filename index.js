@@ -47,12 +47,15 @@ program
     .option('-c, --config <file>', 'uses alternate config file (default: ' + DEFAULT_CONF_FILE + ')')
     .option('-k, --key <key>', 'sets LogDNA Agent Key in config')
     .option('-d, --logdir <dir>', 'adds custom log dir to config', appender(), [])
+    .option('-t, --tags <tags>', 'set tags for this host (for auto grouping), separate multiple tags by comma')
     .on('--help', function() {
         console.log('  Examples:');
         console.log();
         console.log('    $ logdna-agent --key YOUR_AGENT_KEY');
         console.log('    $ logdna-agent -d /home/ec2-user/logs');
         console.log('    $ logdna-agent -d /home/ec2-user/logs -d /path/to/another/log_dir        # multiple logdirs in 1 go');
+        console.log('    $ logdna-agent -t tag');
+        console.log('    $ logdna-agent -t staging,2ndtag');
         console.log();
     })
     .parse(process.argv);
@@ -105,6 +108,15 @@ properties.parse(program.config || DEFAULT_CONF_FILE, { path: true }, function(e
         return;
     }
 
+    if (program.tags) {
+        config.tags = program.tags.replace(/\s*,\s*/g, ",").replace(/^,|,$/g, ""); // trim spaces around comma
+        saveConfig(function() {
+            console.log("Tags " + config.tags + " saved to config.");
+            process.exit(0);
+        });
+        return;
+    }
+
     config.hostname = os.hostname().replace(".ec2.internal", "");
 
     distro(function (err, dist) {
@@ -134,7 +146,7 @@ properties.parse(program.config || DEFAULT_CONF_FILE, { path: true }, function(e
 
 function getAuthToken(config, callback) {
     log("Authenticating Agent Key with " + LOGDNA_APIHOST + (LOGDNA_APISSL ? " (SSL)" : "") + "...");
-    minireq.post( (LOGDNA_APISSL ? "https://" : "http://") + LOGDNA_APIHOST + "/authenticate/" + config.key, { hostname: config.hostname, mac: config.mac, ip: config.ip, agentname: program._name + "-linux", agentversion: pkg.version, osdist: config.osdist, awsaz: config.awsaz }, function(err, res, body) {
+    minireq.post( (LOGDNA_APISSL ? "https://" : "http://") + LOGDNA_APIHOST + "/authenticate/" + config.key, { hostname: config.hostname, mac: config.mac, ip: config.ip, tags: config.tags, agentname: program._name + "-linux", agentversion: pkg.version, osdist: config.osdist, awsaz: config.awsaz }, function(err, res, body) {
         if (err || res.statusCode != "200") {
             // got error, try again after appropriate delay
             if (err) {
