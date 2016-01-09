@@ -121,7 +121,7 @@ properties.parse(program.config || DEFAULT_CONF_FILE, { path: true }, function(e
     distro(function (err, dist) {
         if (!err && dist && dist.os) config.osdist = dist.os + (dist.release ? " " + dist.release : "");
 
-        minireq.get("http://169.254.169.254/latest/dynamic/instance-identity/document/", function(err, res, aws) {
+        minireq.get("http://169.254.169.254/latest/dynamic/instance-identity/document/", { timeout: 1000 }, function(err, res, aws) {
             if (!err && aws) {
                 config.awsid = aws.instanceId;
                 config.awsregion = aws.region;
