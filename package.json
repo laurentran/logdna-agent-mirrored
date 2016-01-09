@@ -18,7 +18,6 @@
   "homepage": "https://github.com/answerbook/logdna-agent-linux",
   "dependencies": {
     "always-tail": "^0.2.0",
-    "aws-locate": "0.0.3",
     "commander": "^2.8.1",
     "getos": "^2.4.0",
     "lodash": "^3.10.1",

@@ -10,7 +10,6 @@ var minireq = require("./lib/minireq");
 var WebSocket = require('./lib/logdna-websocket');
 var os = require("os");
 var distro = require('./lib/linux-distro');
-var awslocate = require('aws-locate');
 var macaddress = require('macaddress');
 var spawn = require('child_process').spawn;
 
@@ -122,8 +121,14 @@ properties.parse(program.config || DEFAULT_CONF_FILE, { path: true }, function(e
     distro(function (err, dist) {
         if (!err && dist && dist.os) config.osdist = dist.os + (dist.release ? " " + dist.release : "");
 
-        awslocate.getAvailabilityZone(function (err, az) {
-            config.awsaz = az;
+        minireq.get("http://169.254.169.254/latest/dynamic/instance-identity/document/", function(err, res, aws) {
+            if (!err && aws) {
+                config.awsid = aws.instanceId;
+                config.awsregion = aws.region;
+                config.awsaz = aws.availabilityZone;
+                config.awsami = aws.imageId;
+                config.awstype = aws.instanceType;
+            }
 
             macaddress.all(function (err, all) {
                 var ifaces = [ 'eth0', 'eth1', 'eth2', 'eth3', 'eth4', 'eth5', 'en0', 'en1', 'en2', 'en3', 'en4', 'en5' ];
@@ -146,7 +151,20 @@ properties.parse(program.config || DEFAULT_CONF_FILE, { path: true }, function(e
 
 function getAuthToken(config, callback) {
     log("Authenticating Agent Key with " + LOGDNA_APIHOST + (LOGDNA_APISSL ? " (SSL)" : "") + "...");
-    minireq.post( (LOGDNA_APISSL ? "https://" : "http://") + LOGDNA_APIHOST + "/authenticate/" + config.key, { hostname: config.hostname, mac: config.mac, ip: config.ip, tags: config.tags, agentname: program._name + "-linux", agentversion: pkg.version, osdist: config.osdist, awsaz: config.awsaz }, function(err, res, body) {
+    minireq.post( (LOGDNA_APISSL ? "https://" : "http://") + LOGDNA_APIHOST + "/authenticate/" + config.key, {
+            hostname: config.hostname
+          , mac: config.mac
+          , ip: config.ip
+          , tags: config.tags
+          , agentname: program._name + "-linux"
+          , agentversion: pkg.version
+          , osdist: config.osdist
+          , awsid: config.awsid
+          , awsregion: config.awsregion
+          , awsaz: config.awsaz
+          , awsami: config.awsami
+          , awstype: config.awstype
+        }, function(err, res, body) {
         if (err || res.statusCode != "200") {
             // got error, try again after appropriate delay
             if (err) {
