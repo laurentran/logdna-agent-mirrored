@@ -64,7 +64,7 @@ if (process.getuid() > 0) {
     process.exit();
 }
 
-minireq.setUA = program._name + "-linux/" + pkg.version;
+minireq.setUA(program._name + "/" + pkg.version);
 
 properties.parse(program.config || DEFAULT_CONF_FILE, { path: true }, function(error, config) {
     config = config || {};
