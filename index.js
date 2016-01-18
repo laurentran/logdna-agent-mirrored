@@ -17,6 +17,7 @@ var socket;
 var numfiles = 0;
 var buf = [];
 var buftimeout;
+var authtimeout;
 
 var DEFAULT_CONF_FILE = "/etc/logdna.conf";
 var LOGDNA_APIHOST = process.env.LDAPIHOST || "api.logdna.com";
@@ -169,15 +170,19 @@ function getAuthToken(config, callback) {
             // got error, try again after appropriate delay
             if (err) {
                 log("Auth error: " + err);
-                return setTimeout(function() {
+                if (authtimeout) clearTimeout(authtimeout);
+                authtimeout = setTimeout(function() {
                     getAuthToken(config, callback);
                 }, AUTHERROR_DELAY);
+                return;
 
             } else {
                 log("Auth error: " + res.statusCode + ": " + JSON.stringify(body));
-                return setTimeout(function() {
+                if (authtimeout) clearTimeout(authtimeout);
+                authtimeout = setTimeout(function() {
                     getAuthToken(config, callback);
                 }, AUTHFAIL_DELAY);
+                return;
             }
         }
 
@@ -233,9 +238,11 @@ function connectLogServer(config) {
         if (~err.indexOf("401")) {
             // invalid token, reauth
             log("Got 401 response, reauthenticating...");
-            return setTimeout(function() {
+            if (authtimeout) clearTimeout(authtimeout);
+            authtimeout = setTimeout(function() {
                 getAuthToken(config);
-            }, 500);
+            }, 250);
+            return;
 
         } else if (~err.indexOf("403")) {
             // intentional unauth
