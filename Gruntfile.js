@@ -21,5 +21,5 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-line-remover');
     grunt.loadNpmTasks('grunt-exec');
     grunt.registerTask('build', ['lineremover', 'exec:nexe']);
-    grunt.registerTask('release', ['exec:fpm_rpm', 'exec:fpm_deb']);
+    grunt.registerTask('release', ['build', 'exec:fpm_rpm', 'exec:fpm_deb']);
 };
