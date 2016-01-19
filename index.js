@@ -150,6 +150,12 @@ properties.parse(program.config || DEFAULT_CONF_FILE, { path: true }, function(e
     });
 });
 
+process.on("uncaughtException", function(err) {
+    log("------------------------------------------------------------------");
+    log("Uncaught Error: " + (err.stack || "").split("\r\n"));
+    log("------------------------------------------------------------------");
+});
+
 function getAuthToken(config, callback) {
     log("Authenticating Agent Key with " + LOGDNA_APIHOST + (LOGDNA_APISSL ? " (SSL)" : "") + "...");
     minireq.post( (LOGDNA_APISSL ? "https://" : "http://") + LOGDNA_APIHOST + "/authenticate/" + config.key, {
@@ -305,6 +311,9 @@ function streamDir(dir) {
         var meta;
 
         tail.on("line", function(line) {
+            if (line && line.length > 32766)
+                line = line.substring(0, 32743) + " (cut off, too long...)";
+
             meta = JSON.stringify({ e: "l", t: Date.now(), l: line, f: file });
             if (socket.connected) {
                 // send any buffered data
