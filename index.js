@@ -311,8 +311,8 @@ function streamDir(dir) {
         var meta;
 
         tail.on("line", function(line) {
-            if (line && line.length > 32766)
-                line = line.substring(0, 32743) + " (cut off, too long...)";
+            if (line && line.length > 32000)
+                line = line.substring(0, 32000) + " (cut off, too long...)";
 
             meta = JSON.stringify({ e: "l", t: Date.now(), l: line, f: file });
             if (socket.connected) {
