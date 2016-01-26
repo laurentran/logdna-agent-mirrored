@@ -307,7 +307,13 @@ function streamDir(dir) {
         log("Streaming " + dir + ": " + logfiles.length + " files");
 
     _.each(logfiles, function(file) {
-        var tail = new Tail(file, "\n", { interval: 250 });
+        var tail;
+        try {
+            tail = new Tail(file, "\n", { interval: 250 });
+        } catch (err) {
+            log("Error tailing " + file + ": " + err);
+            return;
+        }
         var meta;
 
         tail.on("line", function(line) {
