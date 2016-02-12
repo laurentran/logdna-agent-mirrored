@@ -218,7 +218,7 @@ function getAuthToken(config, callback) {
 }
 
 function connectLogServer(config) {
-    socket = new WebSocket( (LOGDNA_LOGSSL ? "https://" : "http://") + LOGDNA_LOGHOST + ":" + LOGDNA_LOGPORT, {
+    socket = new WebSocket( (LOGDNA_LOGSSL ? "https://" : "http://") + LOGDNA_LOGHOST + ":" + LOGDNA_LOGPORT + "/", {
         query: { auth_token: config.auth_token, timestamp: Date.now() }
     });
     socket.on('open', function() {
@@ -358,16 +358,18 @@ function getFiles(dir, files_) {
     var name;
     for (var i = 0; i < files.length; i++) {
         name = dir + '/' + files[i];
-        if (fs.statSync(name).isDirectory()) {
-            getFiles(name, files_);
-        } else if (
-                (
-                    files[i].toLowerCase().indexOf(".log") == files[i].length - 4 || // ends in .log
-                    (!~files[i].indexOf(".") && !~files[i].indexOf("-20")) // extension-less files but not patterns like cron-20150928
-                ) && !~globalExclude.indexOf(name)
-            ) {
-            files_.push(name);
-        }
+        try {
+            if (fs.statSync(name).isDirectory()) {
+                getFiles(name, files_);
+            } else if (
+                    (
+                        files[i].toLowerCase().indexOf(".log") == files[i].length - 4 || // ends in .log
+                        (!~files[i].indexOf(".") && !~files[i].indexOf("-20")) // extension-less files but not patterns like cron-20150928
+                    ) && !~globalExclude.indexOf(name)
+                ) {
+                files_.push(name);
+            }
+        } catch (e) {}
     }
     return files_;
 }
