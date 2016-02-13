@@ -218,8 +218,7 @@ function getAuthToken(config, callback) {
 }
 
 function connectLogServer(config) {
-    log("socket created");
-    socket = new WebSocket( (LOGDNA_LOGSSL ? "https://" : "http://") + LOGDNA_LOGHOST + ":" + LOGDNA_LOGPORT + "/", {
+    socket = new WebSocket( (LOGDNA_LOGSSL ? "https://" : "http://") + LOGDNA_LOGHOST + ":" + LOGDNA_LOGPORT, {
         query: { auth_token: config.auth_token, timestamp: Date.now() }
     });
     socket.on('open', function() {
@@ -272,7 +271,6 @@ function connectLogServer(config) {
         socket.reconnectionDelay = 1000; // reset
         socket.reconnectionDelayMax = 5000; // reset
         socket.options.query.timestamp = Date.now(); // update drift
-        console.log(socket.options);
     });
     socket.on('message', function(data) {
         if (data.substring(0, 1) == "{") {
