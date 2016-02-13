@@ -272,6 +272,7 @@ function connectLogServer(config) {
         socket.reconnectionDelay = 1000; // reset
         socket.reconnectionDelayMax = 5000; // reset
         socket.options.query.timestamp = Date.now(); // update drift
+        console.log(socket.options);
     });
     socket.on('message', function(data) {
         if (data.substring(0, 1) == "{") {
