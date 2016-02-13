@@ -218,6 +218,7 @@ function getAuthToken(config, callback) {
 }
 
 function connectLogServer(config) {
+    log("socket created");
     socket = new WebSocket( (LOGDNA_LOGSSL ? "https://" : "http://") + LOGDNA_LOGHOST + ":" + LOGDNA_LOGPORT + "/", {
         query: { auth_token: config.auth_token, timestamp: Date.now() }
     });
