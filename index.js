@@ -132,7 +132,7 @@ properties.parse(program.config || DEFAULT_CONF_FILE, { path: true }, function(e
             }
 
             macaddress.all(function (err, all) {
-                var ifaces = [ 'eth0', 'eth1', 'eth2', 'eth3', 'eth4', 'eth5', 'en0', 'en1', 'en2', 'en3', 'en4', 'en5' ];
+                var ifaces = [ 'eth0', 'eth1', 'eth2', 'eth3', 'eth4', 'eth5', 'en0', 'en1', 'en2', 'en3', 'en4', 'en5', 'bond0', 'bond1', 'em0', 'em1', 'em2' ];
                 for (var i = 0; i < ifaces.length; i++) {
                     if (all[ifaces[i]]) {
                         config.mac = all[ifaces[i]].mac;
