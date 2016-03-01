@@ -24,7 +24,7 @@ var path = require('path');
 // windows only
 var wincmd;
 
-if (os.getPlatform() === 'win32') {
+if (os.platform() === 'win32') {
     wincmd = require('node-windows');
 }
 
