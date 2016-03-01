@@ -23,7 +23,11 @@ var spawn = require('child_process').spawn;
 var path = require('path');
 
 // windows only
-var wincmd = require('node-windows');
+var wincmd;
+
+if (os.getPlatform() === 'win32') {
+  wincmd = require('node-windows');  
+}
 
 var socket;
 
@@ -36,7 +40,7 @@ program
     .option('-k, --key <key>', 'sets LogDNA Agent Key in config')
     .option('-d, --logdir <dir>', 'adds custom log dir to config', fileUtils.appender(), [])
     .option('-t, --tags <tags>', 'set tags for this host (for auto grouping), separate multiple tags by comma')
-    .on('--help', function() {
+    .on('--help', function () {
         console.log('  Examples:');
         console.log();
         console.log('    $ logdna-agent --key YOUR_AGENT_KEY');
@@ -50,9 +54,9 @@ program
 
 function checkElevated () {
     return new Promise ((resolve) => {
-        if (os.platform() !== 'win32' && process.getuid() > 0) {
+        if (os.platform() !=== 'win32' && process.getuid() > 0) {
             resolve(false);
-        } else if (os.platform() !== 'win32' && process.getuid() <= 0) {
+        } else if (os.platform() !=== 'win32' && process.getuid() <= 0) {
             resolve(true);
         }
 
@@ -154,7 +158,7 @@ checkElevated()
    debug('logdna agent successfully started'); 
 });
 
-process.on('uncaughtException', function(err) {
+process.on('uncaughtException', function (err) {
     debug('------------------------------------------------------------------');
     debug('Uncaught Error: ' + (err.stack || '').split('\r\n'));
     debug('------------------------------------------------------------------');
