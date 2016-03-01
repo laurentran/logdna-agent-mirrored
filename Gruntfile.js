@@ -4,7 +4,7 @@ require('load-grunt-tasks')(grunt);
 
 module.exports = function (grunt) {
 
-    var files = ['lib/**/*.js'];
+    var files = ['./*.js', 'lib/**/*.js'];
     grunt.initConfig({
         lineremover: {
             nukebrowser: {
