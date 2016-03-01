@@ -1,17 +1,17 @@
 #!/usr/bin/env node
 /* globals process */
 // override es6 promise with bluebird
+/* jshint ignore:start */
 Promise = require('bluebird');
+/* jshint ignore:end */
 var debug = require('debug')('logdna:index');
 var program = require('commander');
 var pkg = require('./package.json');
-var fs = require('fs');
 var properties = Promise.promisifyAll(require('properties'));
 var _ = require('lodash');
 var os = require('os');
 
 var minireq = Promise.promisifyAll(require('./lib/minireq'), {multiArgs:true});
-var WebSocket = require('./lib/logdna-websocket');
 var distro = Promise.promisify(require('./lib/os-version'));
 var config = require('./lib/config');
 var fileUtils = require('./lib/file-utilities');
@@ -19,14 +19,13 @@ var apiClient = require('./lib/api-client');
 var connectionManager = require('./lib/connection-manager');
 
 var macaddress = require('macaddress');
-var spawn = require('child_process').spawn;
 var path = require('path');
 
 // windows only
 var wincmd;
 
 if (os.getPlatform() === 'win32') {
-  wincmd = require('node-windows');  
+    wincmd = require('node-windows');
 }
 
 var socket;
@@ -52,16 +51,16 @@ program
     })
     .parse(process.argv);
 
-function checkElevated () {
+function checkElevated() {
     return new Promise ((resolve) => {
-        if (os.platform() !=== 'win32' && process.getuid() > 0) {
+        if (os.platform() !== 'win32' && process.getuid() > 0) {
             resolve(false);
-        } else if (os.platform() !=== 'win32' && process.getuid() <= 0) {
+        } else if (os.platform() !== 'win32' && process.getuid() <= 0) {
             resolve(true);
         }
 
         wincmd.isAdminUser(isAdmin => {
-          resolve(isAdmin);
+            resolve(isAdmin);
         });
     });
 }
@@ -70,12 +69,12 @@ minireq.setUA(path.join(program._name, '/', pkg.version));
 
 checkElevated()
 .then(isElevated => {
-   if (!isElevated) {
-       console.log('You must be running as an Administrator (root, sudo) run this agent! See -h or --help for more info.');
-       process.exit();
-   }
-   
-   return properties.parseAsync(program.config || config.DEFAULT_CONF_FILE, { path: true });
+    if (!isElevated) {
+        console.log('You must be running as an Administrator (root, sudo) run this agent! See -h or --help for more info.');
+        process.exit();
+    }
+
+    return properties.parseAsync(program.config || config.DEFAULT_CONF_FILE, {path: true});
 })
 .then(parsedConfig => {
     config = _.merge({}, config, parsedConfig);
@@ -84,10 +83,11 @@ checkElevated()
     }
 
     // sanitize
-    if (!config.logdir)
+    if (!config.logdir) {
         config.logdir = [config.DEFAULT_LOG_PATH]; // default entry
-    else if (!Array.isArray(config.logdir))
+    } else if (!Array.isArray(config.logdir)) {
         config.logdir = config.logdir.split(','); // force array
+    }
 
     debug(console.log(config));
 
@@ -120,8 +120,10 @@ checkElevated()
     return distro();
 })
 .then(dist => {
-    if (dist && dist.os) config.osdist = dist.os + (dist.release ? ' ' + dist.release : '');
-    return minireq.get('http://169.254.169.254/latest/dynamic/instance-identity/document/', { timeout: 1000 });
+    if (dist && dist.os) {
+        config.osdist = dist.os + (dist.release ? ' ' + dist.release : '');
+    }
+    return minireq.get('http://169.254.169.254/latest/dynamic/instance-identity/document/', {timeout: 1000});
 })
 .then((res, aws) => {
     if (aws) {
@@ -135,8 +137,13 @@ checkElevated()
 })
 .then(all => {
 
-    var ifaces = [ 'eth0', 'eth1', 'eth2', 'eth3', 'eth4', 'eth5', 'en0', 'en1', 'en2', 'en3', 'en4', 'en5', 'bond0', 'bond1', 'em0', 'em1', 'em2' ];
-    for (var i = 0; i < ifaces.length; i++) {
+    var ifaces = [
+        'eth0', 'eth1', 'eth2', 'eth3',
+        'eth4', 'eth5', 'en0', 'en1',
+        'en2', 'en3', 'en4', 'en5',
+        'bond0', 'bond1', 'em0', 'em1',
+        'em2'];
+    for (var i = 0; i < ifaces.length; i += 1) {
         if (all[ifaces[i]]) {
             config.mac = all[ifaces[i]].mac;
             config.ip = all[ifaces[i]].ipv4 || all[ifaces[i]].ipv6;
@@ -154,8 +161,8 @@ checkElevated()
     return connectionManager.connectLogServer(config, program._name);
 })
 .then(sock => {
-   socket = sock;
-   debug('logdna agent successfully started'); 
+    socket = sock;
+    debug('logdna agent successfully started');
 });
 
 process.on('uncaughtException', function (err) {
