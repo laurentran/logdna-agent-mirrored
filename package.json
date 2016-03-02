@@ -18,6 +18,7 @@
   "homepage": "https://github.com/answerbook/logdna-agent-linux",
   "dependencies": {
     "always-tail": "^0.2.0",
+    "async": "^1.5.2",
     "bluebird": "^3.3.3",
     "commander": "^2.8.1",
     "debug": "^2.2.0",
