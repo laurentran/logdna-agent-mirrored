@@ -39,6 +39,7 @@
     "grunt-mocha-cli": "^2.0.0",
     "load-grunt-tasks": "^3.4.0",
     "mock-socket": "^2.0.0",
+    "mockery": "^1.4.0",
     "rimraf": "^2.5.2"
   }
 }
