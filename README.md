@@ -1,5 +1,7 @@
 # logdna-agent-linux
 
+[![Build Status](http://logdna-ci.westus.cloudapp.azure.com/api/badges/sedouard/logdna-agent/status.svg)](http://logdna-ci.westus.cloudapp.azure.com/sedouard/logdna-agent)
+
 LogDNA's client agent which streams log files to your LogDNA account.
 
 ## Getting Started

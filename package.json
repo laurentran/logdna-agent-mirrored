@@ -36,6 +36,9 @@
     "grunt-exec": "^0.4.6",
     "grunt-jscs": "^2.5.0",
     "grunt-line-remover": "0.0.2",
-    "load-grunt-tasks": "^3.4.0"
+    "grunt-mocha-cli": "^2.0.0",
+    "load-grunt-tasks": "^3.4.0",
+    "mock-socket": "^2.0.0",
+    "rimraf": "^2.5.2"
   }
 }
