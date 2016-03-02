@@ -1,0 +1,12 @@
+build:
+  image: node:5.7.0
+  commands:
+    - npm set registry https://registry.npmjs.org/
+    - npm install grunt-cli -g
+    - npm install
+    - grunt test
+  environment:
+cache:
+  mount:
+    - node_modules
+    - .git
