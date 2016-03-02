@@ -22,10 +22,10 @@ var macaddress = require('macaddress');
 var path = require('path');
 
 // windows only
-var wincmd;
+var isWinAdmin;
 
 if (os.platform() === 'win32') {
-    wincmd = require('node-windows');
+    isWinAdmin = require('is-administrator');
 }
 
 var socket;
@@ -59,9 +59,7 @@ function checkElevated() {
             resolve(true);
         }
 
-        wincmd.isAdminUser(isAdmin => {
-            resolve(isAdmin);
-        });
+        return resolve(isWinAdmin());
     });
 }
 
