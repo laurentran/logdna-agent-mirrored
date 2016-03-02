@@ -23,3 +23,33 @@ grunt test
 ```
 
 This is the same command that is ran during CI runs on your pull-request.
+
+# Debugging
+
+Each file has a `debug` variable defined such as:
+
+```js
+var debug = require('debug')('logdna:index');
+```
+
+To enable logs for the [index.js](https://github.com/sedouard/logdna-agent/blob/master/index.js) file just set the environment variable `DEBUG`:
+
+```bash
+# Unix/Linux
+export DEBUG=logdna:index
+# windows
+set DEBUG=logdna:index
+```
+
+This enables `debug` log messages for the [index.js](https://github.com/sedouard/logdna-agent/blob/master/index.js) file.
+
+You can also enable one or more modules to log by using `*`:
+
+```bash
+# Unix/Linux
+export DEBUG=logdna:*
+# windows
+set DEBUG=logdna:lib:lib:api-client,logdna:index
+```
+
+You can use this to diagnose certain parts of the agent.
