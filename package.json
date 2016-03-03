@@ -27,6 +27,7 @@
     "lodash": "^3.10.1",
     "macaddress": "^0.2.8",
     "properties": "^1.2.1",
+    "windows-event-reader": "^1.0.1",
     "ws": "^0.8.0"
   },
   "optionalDependencies": {
